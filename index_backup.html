@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cash Rush</title>
+<style>
+body{margin:0;font-family:Arial;background:#111;color:white;text-align:center}
+.header{padding:25px;background:#191919}
+h1{color:#ffd700;margin:5px}
+.coins{font-size:32px;color:#ffd700;font-weight:bold}
+.game{padding:40px 20px}
+button{border:0;border-radius:15px;padding:18px 35px;font-size:20px;font-weight:bold;background:#ffd700;color:#111}
+button:active{transform:scale(.95)}
+.card{background:#222;padding:25px;border-radius:20px;margin:20px auto;max-width:400px}
+#message{height:30px;margin:20px}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>🪙 CASH RUSH</h1>
+<div>Monedas</div>
+<div class="coins" id="coins">0</div>
+</div>
+
+<div class="game">
+<div class="card">
+<h2>🎯 Reto rápido</h2>
+<p>¡Pulsa el botón para ganar monedas!</p>
+<button onclick="ganar()">💰 GANAR MONEDAS</button>
+<div id="message"></div>
+</div>
+
+<div class="card">
+<h2>📈 Nivel</h2>
+<p id="level">Nivel 1</p>
+<p>Completa retos para subir de nivel.</p>
+</div>
+
+<div class="card">
+<h2>🔥 Racha diaria</h2>
+<p>🔥 1 día</p>
+</div>
+</div>
+
+<script>
+let monedas=0;
+let nivel=1;
+
+function ganar(){
+  let premio=Math.floor(Math.random()*10)+1;
+  monedas+=premio;
+  nivel=Math.floor(monedas/50)+1;
+  document.getElementById("coins").textContent=monedas;
+  document.getElementById("level").textContent="Nivel "+nivel;
+  document.getElementById("message").textContent="🎉 +"+premio+" monedas";
+}
+</script>
+
+
+<script>
+let coins = Number(localStorage.getItem('cashRushCoins') || 0);
+const box = document.createElement("div");
+box.style.cssText = "text-align:center;margin-top:30px;font-family:Arial;";
+box.innerHTML = '<h2>💰 Monedas: <span id="coins">0</span></h2><button id="earn" style="font-size:24px;padding:15px 30px;border-radius:12px;">💵 GANAR MONEDA</button>';
+document.body.appendChild(box);
+document.getElementById("earn").onclick = () => {
+  coins += power; localStorage.setItem('cashCoins', coins); localStorage.setItem('cashRushCoins', coins);
+  document.getElementById("coins").textContent = coins;
+};
+</script>
+
+<div style="text-align:center;margin-top:20px">
+<button id="upgrade" style="font-size:20px;padding:12px 20px;border-radius:10px">
+🛒 MEJORAR (+1 por toque) — 10 💰
+</button>
+</div>
+<script>
+document.getElementById("upgrade").onclick=function(){
+ if(coins>=10){
+   coins-=10;
+   power++; localStorage.setItem('cashPower', power);
+   document.getElementById("coins").textContent=coins;
+   alert("¡Mejora comprada! Ahora ganas "+power+" 💰 por toque.");
+ }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cash Rush</string>
+    <string name="title_activity_main">Cash Rush</string>
+    <string name="package_name">com.cashrush.game</string>
+    <string name="custom_url_scheme">com.cashrush.game</string>
+</resources>

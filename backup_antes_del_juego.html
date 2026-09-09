@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cash Rush</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;
+ font-family:Arial,sans-serif;
+ background:linear-gradient(135deg,#111827,#064e3b);
+ color:white;text-align:center
+}
+h1{font-size:42px;margin:25px 0 5px}
+.card{
+ width:92%;max-width:430px;margin:20px auto;
+ padding:24px;border-radius:25px;
+ background:rgba(255,255,255,.10)
+}
+#coins{font-size:52px;font-weight:bold;margin:8px}
+#power{color:#fde68a;font-size:18px;margin-bottom:20px}
+#earn{
+ width:210px;height:210px;border-radius:50%;
+ border:8px solid #fbbf24;background:#f59e0b;
+ color:white;font-size:28px;font-weight:bold;
+ box-shadow:0 8px 0 #b45309
+}
+#earn:active{transform:translateY(7px);box-shadow:0 1px 0 #b45309}
+.shop{margin-top:28px;border-top:1px solid #ffffff33;padding-top:18px}
+.upgrade{
+ width:100%;padding:16px;margin-top:10px;
+ border:0;border-radius:15px;
+ background:#10b981;color:white;
+ font-size:18px;font-weight:bold
+}
+.upgrade:disabled{background:#4b5563}
+#msg{margin-top:15px;color:#a7f3d0}
+</style>
+</head>
+<body>
+
+<h1>💰 CASH RUSH</h1>
+<div>¡Haz dinero tocando!</div>
+
+<div class="card">
+  <div>DINERO</div>
+  <div id="coins">0</div>
+  <div id="power">+1 💰 por toque</div>
+
+  <button id="earn">💵<br>GANAR</button>
+
+  <div class="shop">
+    <h2>🛒 TIENDA</h2>
+    <button class="upgrade" id="upgrade">
+      ⚡ MEJORAR — 10 💰
+    </button>
+    <div id="msg">💾 Progreso guardado</div>
+  </div>
+</div>
+
+<script>
+let coins = Number(localStorage.getItem("cashRushCoins") || 0);
+let power
+index.html <<'EOF'
+
+<script>
+let coins = 0;
+let power = 1;
+
+const coinsEl = document.getElementById("coins");
+const powerEl = document.getElementById("power");
+const earnBtn = document.getElementById("earn");
+const upgradeBtn = document.getElementById("upgrade");
+const msg = document.getElementById("msg");
+
+function update() {
+  coinsEl.textContent = coins;
+  powerEl.textContent = "+" + power + " 💰 por toque";
+  upgradeBtn.disabled = coins < 10;
+}
+
+earnBtn.onclick = function() {
+  coins += power;
+  update();
+};
+
+upgradeBtn.onclick = function() {
+  if (coins >= 10) {
+    coins -= 10;
+    power++;
+    update();
+    msg.textContent = "🔥 ¡Mejora comprada!";
+  }
+};
+
+update();
+</script>

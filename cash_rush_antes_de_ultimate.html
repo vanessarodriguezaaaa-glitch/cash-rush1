@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>💰 Cash Rush</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#070b12;color:#fff;font-family:Arial,sans-serif;overflow-x:hidden}
+.app{max-width:600px;margin:auto;min-height:100vh;padding-bottom:85px}
+header{padding:18px;background:linear-gradient(135deg,#121c30,#0b111e);position:sticky;top:0;z-index:5}
+.logo{font-size:25px;font-weight:900}
+.money{font-size:36px;font-weight:900;margin-top:7px;color:#fff}
+.sub{color:#9ca9bd;font-size:13px}
+.card{background:#121a29;margin:12px;padding:16px;border-radius:20px;box-shadow:0 7px 25px #0007}
+h2{margin:0 0 12px}
+button{border:0;border-radius:14px;padding:13px 16px;background:#26344c;color:#fff;font-weight:800;font-size:14px}
+button:active{transform:scale(.96)}
+.primary{width:100%;padding:25px;font-size:23px;background:linear-gradient(135deg,#18c978,#087e49);box-shadow:0 10px 30px #0aa65b55}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item{background:#1c273a;padding:14px;border-radius:16px}
+.item b{display:block;margin-bottom:6px}
+.item small{color:#9ca9bd}
+.buy{width:100%;margin-top:10px}
+.nav{position:fixed;bottom:0;left:0;right:0;height:74px;max-width:600px;margin:auto;background:#101827;border-top:1px solid #26344b;display:grid;grid-template-columns:repeat(5,1fr);z-index:20}
+.nav button{background:transparent;border-radius:0;padding:4px;color:#8290a7}
+.nav button.active{color:#fff;background:#1b2638}
+.nav span{display:block;font-size:21px}
+.progress{height:9px;background:#29354a;border-radius:20px;overflow:hidden}
+.progress div{height:100%;background:linear-gradient(90deg,#ffd54a,#ff8c00)}
+.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #273349}
+.badge{display:inline-block;background:#26344c;border-radius:20px;padding:7px 10px;margin:3px}
+.gold{color:#ffd54a}.green{color:#42df91}.red{color:#ff6979}
+.danger{background:#9c3040}
+.toast{position:fixed;top:90px;left:50%;transform:translateX(-50%);background:#fff;color:#111;padding:12px 18px;border-radius:30px;font-weight:900;z-index:100;animation:t 2.4s forwards}
+.coin{position:fixed;z-index:99;color:#ffd54a;font-weight:900;pointer-events:none;animation:c .8s forwards}
+@keyframes c{to{opacity:0;transform:translateY(-100px) scale(1.5)}}
+@keyframes t{0%{opacity:0;transform:translate(-50%,-15px)}15%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+input{width:100%;padding:12px;border:0;border-radius:12px;background:#26344c;color:#fff;margin:5px 0}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="logo">💰 CASH RUSH</div>
+<div class="money" id="money">$0</div>
+<div class="sub" id="income">$0 / segundo</div>
+</header>
+<main id="screen"></main>
+<nav class="nav">
+<button onclick="page('home')" id="n-home"><span>🏠</span>Inicio</button>
+<button onclick="page('shop')" id="n-shop"><span>🛒</span>Tienda</button>
+<button onclick="page('business')" id="n-business"><span>🏢</span>Negocios</button>
+<button onclick="page('achievements')" id="n-achievements"><span>🏆</span>Logros</button>
+<button onclick="page('profile')" id="n-profile"><span>👤</span>Perfil</button>
+</nav>
+</div>
+
+<script>
+const KEY="cashRushUltimateSave";
+let g={
+coins:0,power:1,bonus:0,auto:0,workers:0,level:1,xp:0,streak:0,
+total:0,clicks:0,gems:0,prestige:0,lastSave:Date.now(),lastDaily:0,
+dailyStreak:0,missionProgress:0,missionGoal:50,missionReward:1000,
+eventMultiplier:1,eventEnds:0,achievements:[],
+lemon:0,cafe:0,tech:0,bank:0,factory:0,casino:0,
+zone:1,inventory:0
+};
+let current="home";
+
+function load(){
+try{let x=localStorage.getItem(KEY);if(x)g={...g,...JSON.parse(x)}}catch(e){}
+}
+function save(){g.lastSave=Date.now();localStorage.setItem(KEY,JSON.stringify(g))}
+function fmt(n){
+if(n>=1e15)return "$"+(n/1e15).toFixed(2)+"Q";
+if(n>=1e12)return "$"+(n/1e12).toFixed(2)+"T";
+if(n>=1e9)return "$"+(n/1e9).toFixed(2)+"B";
+if(n>=1e6)return "$"+(n/1e6).toFixed(2)+"M";
+if(n>=1e3)return "$"+(n/1e3).toFixed(2)+"K";
+return "$"+Math.floor(n);
+}
+function need(){return Math.floor(100*Math.pow(1.35,g.level-1))}
+function income(){
+let x=g.auto+g.workers*10+g.lemon*5+g.cafe*20+g.tech*80+g.bank*250+g.factory*1000+g.casino*5000;
+return Math.floor(x*(1+g.prestige*.25)*g.eventMultiplier)
+}
+function toast(x){let t=document.createElement("div");t.className="toast";t.textContent=x;document.body.appendChild(t);setTimeout(()=>t.remove(),2400)}
+function header(){money.textContent=fmt(g.coins);incomeEl=document.getElementById("income");incomeEl.textContent=fmt(income())+" / segundo"}
+function xp(n){
+g.xp+=n;
+while(g.xp>=need()){g.xp-=need();g.level++;toast("⭐ ¡Nivel "+g.level+"!")}
+}
+function tap(e){
+let amount=(g.power+g.bonus)*(1+g.prestige*.1)*g.eventMultiplier;
+g.coins+=amount;g.total+=amount;g.clicks++;g.missionProgress++;xp(Math.max(1,Math.floor(amount/10)));
+let c=document.createElement("div");c.className="coin";c.textContent="+"+fmt(amount);
+c.style.left=(e.clientX||innerWidth/2)+"px";c.style.top=(e.clientY||250)+"px";document.body.appendChild(c);setTimeout(()=>c.remove(),800);
+mission();achievements();save();render()
+}
+function buy(t){
+let d={
+power:["⚡ Poder",Math.floor(50*Math.pow(1.45,g.power-1)),()=>g.power++],
+bonus:["💎 Bonus",Math.floor(500*Math.pow(1.55,g.bonus)),()=>g.bonus+=2],
+auto:["⏱️ Ingreso",Math.floor(250*Math.pow(1.5,g.auto/10)),()=>g.auto+=5],
+workers:["👷 Trabajador",Math.floor(1000*Math.pow(1.5,g.workers)),()=>g.workers++]
+}[t];
+if(g.coins<d[1])return toast("❌ Dinero insuficiente");
+g.coins-=d[1];d[2]();toast("✅ "+d[0]+" mejorado");save();render()
+}
+function biz(t){
+let d={
+lemon:["🍋 Limonada",1000,5],cafe:["☕ Cafetería",10000,20],tech:["💻 Tecnología",100000,80],
+bank:["🏦 Banco",1000000,250],factory:["🏭 Fábrica",10000000,1000],casino:["🎰 Casino",100000000,5000]
+}[t];
+let cost=Math.floor(d[1]*Math.pow(1.65,g[t]));
+if(g.coins<cost)return toast("❌ Necesitas "+fmt(cost));
+g.coins-=cost;g[t]++;toast("🏢 "+d[0]+" comprado");achievements();save();render()
+}
+function daily(){
+if(Date.now()-g.lastDaily<86400000)return toast("🎁 Vuelve mañana");
+let r=1000+g.dailyStreak*1000;g.coins+=r;g.total+=r;g.dailyStreak++;g.lastDaily=Date.now();
+toast("🎁 +"+fmt(r));save();render()
+}
+function box(){
+if(g.coins<1000)return toast("🎁 Necesitas $1K");
+g.coins-=1000;let r=Math.random();
+if(r<.55){let x=Math.floor(1500+Math.random()*3500);g.coins+=x;toast("💰 +"+fmt(x))}
+else if(r<.85){let x=Math.floor(5000+Math.random()*5000);g.coins+=x;toast("🎉 GRAN PREMIO +"+fmt(x))}
+else{g.eventMultiplier=3;g.eventEnds=Date.now()+60000;toast("⚡ X3 durante 60 segundos")}
+save();render()
+}
+function mission(){
+if(g.missionProgress>=g.missionGoal){
+g.coins+=g.missionReward;toast("🎯 Misión +"+fmt(g.missionReward));
+g.missionProgress=0;g.missionGoal=Math.floor(g.missionGoal*1.5);g.missionReward=Math.floor(g.missionReward*1.7);save()
+}
+}
+function achievements(){
+let a=[
+["first","💵 Primer dinero",g.clicks>=1,100],
+["100","👆 100 clics",g.clicks>=100,1000],
+["1000","🔥 1,000 clics",g.clicks>=1000,10000],
+["million","💰 Millonario",g.total>=1e6,50000],
+["rich","💎 10 millones",g.total>=1e7,250000],
+["biz","🏢 Empresario",businesses()>=5,10000],
+["p10","⭐ Nivel 10",g.level>=10,50000],
+["p25","👑 Nivel 25",g.level>=25,500000],
+["rebirth","💎 Primer Prestigio",g.prestige>=1,100000]
+];
+for(let x of a)if(x[2]&&!g.achievements.includes(x[0])){
+g.achievements.push(x[0]);g.coins+=x[3];toast("🏆 "+x[1]+" +"+fmt(x[3]))
+}
+}
+function businesses(){return g.lemon+g.cafe+g.tech+g.bank+g.factory+g.casino}
+function prestige(){
+let req=1e6*Math.pow(5,g.prestige);
+if(g.coins<req)return toast("💎 Necesitas "+fmt(req));
+g.coins=0;g.power=1;g.bonus=0;g.auto=0;g.workers=0;
+g.lemon=0;g.cafe=0;g.tech=0;g.bank=0;g.factory=0;g.casino=0;
+g.prestige++;g.gems+=10+g.prestige*5;toast("💎 ¡PRESTIGIO!");save();render()
+}
+function exportSave(){
+let b=new Blob([JSON.stringify(g)],{type:"application/json"}),a=document.createElement("a");
+a.href=URL.createObjectURL(b);a.download="cash-rush-partida.json";a.click()
+}
+function importSave(e){
+let f=e.target.files[0];if(!f)return;let r=new FileReader();
+r.onload=()=>{try{let x=JSON.parse(r.result);if(typeof x.coins!=="number")throw 0;g={...g,...x};save();render();toast("📥 Partida cargada")}catch{toast("❌ Archivo inválido")}};
+r.readAsText(f)
+}
+function resetGame(){if(confirm("¿Borrar toda la partida?")){localStorage.removeItem(KEY);location.reload()}}
+function page(p){current=p;render()}
+function render(){
+header();
+document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));
+document.getElementById("n-"+current)?.classList.add("active");
+let s=document.getElementById("screen");
+
+if(current==="home")s.innerHTML=`
+<div class="card"><h2>🎮 CASH RUSH</h2><p class="sub">Conviértete en el magnate más rico.</p>
+<button class="primary" onclick="tap(event)">💵 GANAR DINERO</button>
+<p class="sub">+${fmt((g.power+g.bonus)*(1+g.prestige*.1)*g.eventMultiplier)} por toque</p></div>
+<div class="card"><h2>⭐ Nivel ${g.level}</h2><div class="progress"><div style="width:${Math.min(100,g.xp/need()*100)}%"></div></div><p class="sub">${g.xp}/${need()} XP</p></div>
+<div class="card"><h2>🎯 Misión</h2><p>Haz ${g.missionGoal} acciones</p><div class="progress"><div style="width:${Math.min(100,g.missionProgress/g.missionGoal*100)}%"></div></div><p>${g.missionProgress}/${g.missionGoal}</p><b class="gold">Premio: ${fmt(g.missionReward)}</b></div>
+<div class="card"><h2>🎁 Recompensas</h2><button onclick="daily()">🎁 Bono diario</button> <button onclick="box()">🎁 Caja $1K</button></div>
+${g.eventMultiplier>1?'<div class="card"><h2>⚡ EVENTO X3</h2><p class="gold">¡Todo produce x3!</p></div>':''}
+<div class="card"><h2>🌎 Zonas</h2><div class="grid">
+<div class="item">🏠 Ciudad<br><small>Desbloqueada</small></div>
+<div class="item ${g.level<5?'locked':''}">🌆 Metrópolis<br><small>${g.level>=5?'Desbloqueada':'Nivel 5'}</small></div>
+<div class="item ${g.level<15?'locked':''}">🏙️ Megaciudad<br><small>${g.level>=15?'Desbloqueada':'Nivel 15'}</small></div>
+<div class="item ${g.level<30?'locked':''}">🌎 Capital<br><small>${g.level>=30?'Desbloqueada':'Nivel 30'}</small></div>
+</div></div>`;
+
+if(current==="shop")s.innerHTML=`
+<div class="card"><h2>🛒 Tienda</h2></div>
+${shopItem("power","⚡ Poder","Nivel "+g.power+" · +1 toque",Math.floor(50*Math.pow(1.45,g.power-1)))}
+${shopItem("bonus","💎 Bonus","+"+g.bonus+" por toque",Math.floor(500*Math.pow(1.55,g.bonus)))}
+${shopItem("auto","⏱️ Ingreso automático","+"+g.auto+"/s",Math.floor(250*Math.pow(1.5,g.auto/10)))}
+${shopItem("workers","👷 Trabajador",g.workers+" trabajadores",Math.floor(1000*Math.pow(1.5,g.workers)))}
+<div class="card"><h2>💎 Prestigio</h2><p>Reinicia tu imperio para conseguir gemas.</p><p>Necesitas <b>${fmt(1e6*Math.pow(5,g.prestige))}</b></p><button onclick="prestige()">💎 PRESTIGIO</button></div>`;
+
+if(current==="business"){
+let a=[["lemon","🍋 Puesto de limonada",1000,5],["cafe","☕ Cafetería",10000,20],["tech","💻 Tecnología",100000,80],["bank","🏦 Banco",1e6,250],["factory","🏭 Fábrica",1e7,1000],["casino","🎰 Casino",1e8,5000]];
+s.innerHTML='<div class="card"><h2>🏢 Negocios</h2><p class="sub">Construye tu imperio.</p></div>';
+a.forEach(x=>{let cost=Math.floor(x[2]*Math.pow(1.65,g[x[0]]));s.innerHTML+=`<div class="card"><div class="item"><b>${x[1]}</b><small>Posees ${g[x[0]]} · +${fmt(x[3])}/s</small><button class="buy" onclick="biz('${x[0]}')">Comprar ${fmt(cost)}</button></div></div>`})
+}
+
+if(current==="achievements"){
+let a=[["💵","Primer dinero",g.clicks>=1],["👆","100 clics",g.clicks>=100],["🔥","1,000 clics",g.clicks>=1000],["💰","Millonario",g.total>=1e6],["💎","10 millones",g.total>=1e7],["🏢","5 negocios",businesses()>=5],["⭐","Nivel 10",g.level>=10],["👑","Nivel 25",g.level>=25],["💎","Primer prestigio",g.prestige>=1]];
+s.innerHTML='<div class="card"><h2>🏆 Logros</h2></div>';
+a.forEach(x=>s.innerHTML+=`<div class="card"><b>${x[0]} ${x[1]}</b><span class="badge">${x[2]?'✅ COMPLETADO':'🔒 BLOQUEADO'}</span></div>`)
+}
+
+if(current==="profile")s.innerHTML=`
+<div class="card"><h2>👤 Perfil</h2>
+<div class="stat"><span>⭐ Nivel</span><b>${g.level}</b></div>
+<div class="stat"><span>💰 Dinero</span><b>${fmt(g.coins)}</b></div>
+<div class="stat"><span>📈 Total ganado</span><b>${fmt(g.total)}</b></div>
+<div class="stat"><span>👆 Clics</span><b>${g.clicks}</b></div>
+<div class="stat"><span>⏱️ Ingreso/s</span><b>${fmt(income())}</b></div>
+<div class="stat"><span>🏢 Negocios</span><b>${businesses()}</b></div>
+<div class="stat"><span>🏆 Logros</span><b>${g.achievements.length}</b></div>
+<div class="stat"><span>💎 Gemas</span><b>${g.gems}</b></div>
+<div class="stat"><span>♻️ Prestigios</span><b>${g.prestige}</b></div></div>
+<div class="card"><h2>💾 Partida</h2>
+<button onclick="exportSave()">📤 Exportar</button>
+<button onclick="document.getElementById('file').click()">📥 Importar</button>
+<input id="file" type="file" accept=".json" style="display:none" onchange="importSave(event)">
+</div>
+<div class="card"><h2>⚙️ Configuración</h2><button onclick="save();toast('💾 Guardado')">💾 Guardar</button> <button class="danger" onclick="resetGame()">🗑️ Reiniciar</button></div>`;
+
+}
+function shopItem(t,title,desc,cost){return `<div class="card"><div class="item"><b>${title}</b><small>${desc}</small><button class="buy" onclick="buy('${t}')">${fmt(cost)}</button></div></div>`}
+
+load();
+
+let old=Date.now()-g.lastSave;
+if(old>10000&&income()>0){
+let sec=Math.min(28800,Math.floor(old/1000)),earned=income()*sec;
+g.coins+=earned;g.total+=earned;
+setTimeout(()=>toast("💤 Ganaste "+fmt(earned)+" mientras estabas fuera"),500)
+}
+
+render();
+
+setInterval(()=>{
+if(g.eventEnds&&Date.now()>=g.eventEnds){g.eventMultiplier=1;g.eventEnds=0;toast("⚡ Evento terminado")}
+let x=income();
+if(x>0){g.coins+=x;g.total+=x;g.missionProgress++;mission()}
+achievements();save();header();
+},1000);
+
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")save()});
+window.addEventListener("beforeunload",save);
+</script>
+</body>
+</html>
